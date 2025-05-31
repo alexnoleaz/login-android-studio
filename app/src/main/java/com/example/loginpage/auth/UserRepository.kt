@@ -1,11 +1,11 @@
-package com.example.loginpage
+package com.example.loginpage.auth
 
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class UserDatabaseHelper(context: Context): SQLiteOpenHelper(context, "Users.db", null, 1) {
+class UserRepository(context: Context) : SQLiteOpenHelper(context, "users.db", null, 1) {
     override fun onCreate(db: SQLiteDatabase?) {
         val createTable = """
             CREATE TABLE users (
@@ -19,7 +19,7 @@ class UserDatabaseHelper(context: Context): SQLiteOpenHelper(context, "Users.db"
 
         // Initial data
         insertInitialUser(db, "Administrador", "admin", "admin123qwe")
-        insertInitialUser(db, "Mantenedor","maintainer", "maintainer123qwe")
+        insertInitialUser(db, "Mantenedor", "maintainer", "maintainer123qwe")
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
@@ -27,23 +27,30 @@ class UserDatabaseHelper(context: Context): SQLiteOpenHelper(context, "Users.db"
         onCreate(db)
     }
 
-    fun signIn(username: String, password: String): String? {
+    fun signIn(username: String, password: String): User? {
         val db = this.readableDatabase
         val query = "SELECT * FROM users WHERE username = ? AND password = ?"
         val cursor = db.rawQuery(query, arrayOf(username, password))
-        val result = if(cursor.moveToFirst())
-            cursor.getString(cursor.getColumnIndexOrThrow("name"))
-        else null
+        val user = if (cursor.moveToFirst()) {
+            User(
+                id = cursor.getInt(cursor.getColumnIndexOrThrow("id")),
+                name = cursor.getString(cursor.getColumnIndexOrThrow("name")),
+                username = cursor.getString(cursor.getColumnIndexOrThrow("username")),
+                password = cursor.getString(cursor.getColumnIndexOrThrow("password"))
+            )
+        } else null
 
         cursor.close()
-        return result
+        return user
     }
 
-    private fun insertInitialUser(db: SQLiteDatabase?,name: String, username: String, password: String){
+    private fun insertInitialUser(
+        db: SQLiteDatabase?, name: String, username: String, password: String
+    ) {
         val values = ContentValues().apply {
             put("name", name)
             put("username", username)
-            put("password",password)
+            put("password", password)
         }
         db?.insert("users", null, values)
     }

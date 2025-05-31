@@ -8,12 +8,14 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.net.toUri
+import com.example.loginpage.auth.UserRepository
+import com.example.loginpage.task.TaskListActivity
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var userHelper: UserDatabaseHelper
+    private lateinit var userRepository: UserRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,24 +34,34 @@ class MainActivity : AppCompatActivity() {
         val btnIg = findViewById<ImageButton>(R.id.btnIg)
         val btnX = findViewById<ImageButton>(R.id.btnX)
 
-        userHelper = UserDatabaseHelper(this)
+        userRepository = UserRepository(this)
 
-        btnLogin.setOnClickListener{
+        btnLogin.setOnClickListener {
             val username = txtUsername.text.toString().trim()
             val password = txtPassword.text.toString().trim()
 
-            val result = userHelper.signIn(username,password)
-            if(result !=null)
-                Toast.makeText(this,"Bienvenido $result",Toast.LENGTH_SHORT).show()
-            else Toast.makeText(this,"Credenciales inválidas",Toast.LENGTH_SHORT).show()
+            if (username.isBlank() || password.isBlank()) {
+                Toast.makeText(this, "Por favor, rellena todos los campos", Toast.LENGTH_SHORT)
+                    .show()
+                return@setOnClickListener
+            }
+
+            val user = userRepository.signIn(username, password)
+            if (user != null) {
+                val intent = Intent(this, TaskListActivity::class.java)
+                intent.putExtra("name", user.name)
+
+                startActivity(intent)
+                finish()
+            } else Toast.makeText(this, "Credenciales inválidas", Toast.LENGTH_SHORT).show()
         }
 
-        btnFb.setOnClickListener { this.toSocialNetwork("https://www.facebook.com/UPN/?locale=es_LA")}
-        btnIg.setOnClickListener { this.toSocialNetwork("https://www.instagram.com/upn/?hl=es-la")}
-        btnX.setOnClickListener { this.toSocialNetwork("https://x.com/UPN_Oficial")}
+        btnFb.setOnClickListener { this.toSocialNetwork("https://www.facebook.com/UPN/?locale=es_LA") }
+        btnIg.setOnClickListener { this.toSocialNetwork("https://www.instagram.com/upn/?hl=es-la") }
+        btnX.setOnClickListener { this.toSocialNetwork("https://x.com/UPN_Oficial") }
     }
 
-    private fun toSocialNetwork(url: String){
+    private fun toSocialNetwork(url: String) {
         val intent = Intent(Intent.ACTION_VIEW)
         intent.data = url.toUri()
         startActivity(intent)
